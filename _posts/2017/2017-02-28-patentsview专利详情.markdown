@@ -9,14 +9,12 @@ date: "2017-02-28 14:32"
 <!-- more -->
 ### 基本信息
 
-- id
-- 类别(Design、reissue等)
 - 专利号
+- 类别(外观型专利，实用性专利，植物发明专利和再颁发专利)
 - 国家(一般是US)
 - 授予日期
 - 摘要
 - 标题
-- WIPO文件类型编号，[种类](http://www.uspto.gov/learning-and-resources/support-centers/electronic-business-center/kind-codes-included-uspto-patent)
 - 专利声明的数量
 
 ### 申请书(application)
@@ -25,7 +23,7 @@ date: "2017-02-28 14:32"
 
 - USPTO分配的申请书编号
 - 专利号
-- 申请书的序列号[点这里](https://www.uspto.gov/web/offices/ac/ido/oeip/taf/filingyr.htm)
+- 申请书的序列号[序列号](https://www.uspto.gov/web/offices/ac/ido/oeip/taf/filingyr.htm)
 - 唯一的申请书识别码
 - 申请书归档的国家
 - 申请书归档日期
@@ -34,7 +32,6 @@ date: "2017-02-28 14:32"
 
 说明专利的内容。
 
-- 唯一id
 - 专利号
 - 内容
 - sequence number of claim this is dependent on. -1 if independent
@@ -87,7 +84,8 @@ US Related Documents for granted patents
 - section_id
 - cpc section  
 
-A = Human Necessitites, B = Performing Operations; Transporting, C = Chemistry; Metallurgy, D = Textiles; Paper, E = Fixed Constructions, F = Mechanical Engineering; Lighting; Heating; Weapons; Blasting Engines or Pumps, G = Physics, H = Electricity, Y = General Tagging of New Technological Developments)
+> A = Human Necessitites, B = Performing Operations; Transporting, C = Chemistry; Metallurgy, D = Textiles; Paper, E = Fixed Constructions, F = > > Mechanical Engineering; Lighting; Heating; Weapons; Blasting Engines or Pumps, G = Physics, H = Electricity, Y = General Tagging of New
+> Technological Developments)
 
 - [subsection_id](http://www.uspto.gov/web/patents/classification/cpc.html)
 - [group_id](http://www.uspto.gov/web/patents/classification/cpc.html)
@@ -135,7 +133,7 @@ A = Human Necessitites, B = Performing Operations; Transporting, C = Chemistry; 
 - 类别
 - 该外文文献被专利引用的次序
 
-### 专利应用的美国专利申请书
+### 专利引用的美国专利申请书
 
 - id
 - 专利号
@@ -143,7 +141,7 @@ A = Human Necessitites, B = Performing Operations; Transporting, C = Chemistry; 
 - 引用日期
 - WIPO文档类型编号，[种类](http://www.uspto.gov/learning-and-resources/support-centers/electronic-business-center/kind-codes-included-uspto-patent)
 - 申请书的发布号
-- 申请书的应用类别(examiner,applicati,other)
+- 申请书的引用类别(examiner,applicant,other)
 - 序号
 
 ### 专利引用的美国已授权的专利

@@ -3,3 +3,426 @@ layout: "post"
 title: "表单、输入和服务"
 date: "2017-02-27 12:10"
 ---
+
+如何使用AngularJS的服务，包括内置服务和自定义服务。
+
+<!-- more -->
+
+### ng-model
+
+AngularJS提供ng-model进行数据的双向绑定。
+
+```html
+<!DOCTYPE html>
+<html ng-app="notesApp">
+  <head>
+    <meta charset="utf-8">
+    <title>Note App</title>
+  </head>
+  <body ng-controller="MainCtrl as ctrl">
+    <input type="text" name="username" ng-model="ctrl.username">
+    <input type="password" name="password" ng-model="ctrl.password">
+    <button type="button" name="button" ng-click="ctrl.change()">Change value</button>
+    <button type="button" name="button" ng-click="ctrl.submit()">Submit</button>
+
+    <script src="../angular.js" charset="utf-8"></script>
+    <script type="text/javascript">
+      angular.module('notesApp', [])
+        .controller('MainCtrl', [function() {
+          var self = this;
+          self.change = function () {
+            self.username = 'Changed';
+            self.password = 'password';
+          };
+          self.submit = function () {
+            console.log('User clicked submit with',self.username ,self.password);
+          }
+        }]);
+    </script>
+  </body>
+</html>
+```
+
+### 表单的使用
+
+```html
+<!DOCTYPE html>
+<html ng-app="notesApp">
+  <head>
+    <meta charset="utf-8">
+    <title>Note App</title>
+  </head>
+  <body ng-controller="MainCtrl as ctrl">
+    <form ng-submit="ctrl.submit()">
+      <input type="text" ng-model="ctrl.user.name">
+      <input type="password" ng-model="ctrl.user.password">
+      <input type="submit" value="Submit">
+    </form>
+
+    <script src="../angular.js" charset="utf-8"></script>
+    <script type="text/javascript">
+      angular.module('notesApp', [])
+        .controller('MainCtrl', [function () {
+          var self = this;
+          self.submit = function () {
+            console.log('User clicked submit with', self.user);
+          };
+        }]);
+    </script>
+  </body>
+</html>
+```
+
+> 输入框和按钮整合到表单中。
+> `ng-submit`指令可以通过多种方式触发表单的提交事件，如单击"submit"按钮或者在输入框中按下回车键。
+> `ng-click`只能通过按钮的单击事件触发。
+
+### 表单状态及验证
+
+```html
+<!DOCTYPE html>
+<html ng-app="notesApp">
+  <head>
+    <meta charset="utf-8">
+    <title>Note App</title>
+  </head>
+  <body ng-controller="MainCtrl as ctrl">
+    <form ng-submit="ctrl.submit()" name="myForm">
+      <input type="text" ng-model="ctrl.user.username" required ng-minlength="4">
+      <input type="password" ng-model="ctrl.user.password" required>
+      <input type="submit" value="Submit" ng-disabled="myForm.$invalid">
+    </form>
+    <script src="../angular.js" charset="utf-8"></script>
+    <script type="text/javascript">
+      angular.module('notesApp', [])
+        .controller('MainCtrl', [function () {
+          var self = this;
+          self.submit = function(){
+            console.log(self.user);
+          };
+        }]);
+    </script>
+  </body>
+</html>
+```
+
+*实现的功能*
+
+- 给表单指定名称，稍后访问表单
+- 调用HTML5中与验证相关的标签，添加required属性
+- 添加ng-minlength属性
+- 调用ng-disabled指令
+- 对disable属性所对应的表达式，控制器可以访问到表单的当前状态。
+
+当用户使用带有名称的表单时，AngularJS会创建一个表单控制器(`FormController`)，这个控制器包含了表单的当前状态和一些辅助函数。用户可以通过表单名来获取它对应的控制器。
+
+| 表单状态名      | 作用           |
+| :------------- | :------------- |
+| $invalid       | 一旦任何验证没通过，AngularJS会为表单设置该属性       |
+| $valid         | 和$invalid相反       |
+| $pristine      | AngularJS中表单的初始状态都是$pristine，它代表用户是否已经输入或者修改过表单元素。可能的用途：当表单处于该状态时，让reset按钮不可用       |
+| $dirty         | 和$pristine相反，它表示用户已经修改了数据(用户可以撤销修改内容，但是$dirty属性已经被设置了)       |
+| $error         | 它为每一个表单提供了如下信息：哪些输入控件出现了错误以及错误类型。       |
+
+### 表单的错误处理
+
+AngularJS内置的验证器
+
+| 验证器         | 作用            |
+| :------------- | :------------- |
+| required       |  确保内容不为空，知道填入相应内容之前，这个字段始终被标记为$invalid      |
+| ng-required    |  根据表达式的返回值决定字段是否是必须的      |
+| ng-minlength   |  字符的最小长度      |
+| ng-maxlength   |  字符的最大长度      |
+| ng-pattern     |  字段必须匹配某个正则表达式      |
+| type="email"   |  字段必须是一个合法的邮件地址      |
+| type="number"  |  字段必须是一个有效的数字，还可以指定min和max      |
+| type="date"    |  显示成一个HTML日期选择器      |
+| type="url"     |  字段必须是一个合法的url地址      |
+
+> 用户也可以编写自定义验证器
+
+### 显示错误信息
+
+提示错误信息：
+
+1. 建立一个模型对象来反映表单中的错误，用户可以将错误信息以更合理的方法显示。
+2. 自动添加或者去除CSS class，当表单中的某些字段出现错误时，高亮显示。
+
+```html
+<!DOCTYPE html>
+<html ng-app="notesApp">
+  <head>
+    <meta charset="utf-8">
+    <title>Note App</title>
+  </head>
+  <body ng-controller="MainCtrl as ctrl">
+    <form ng-submit="ctrl.submit()" name="myForm">
+      <input type="text" name="uname" ng-model="ctrl.user.username" required="required" minlength="4">
+      <span ng-show="myForm.uname.$error.required"> This is a required error</span>
+      <span ng-show="myForm.uname.$error.minlength"> minimum length required 4</span>
+      <span ng-show="myForm.uname.$invalid"> This field is invalid</span>
+      <input type="password" name="pwd" ng-model="ctrl.user.password" required="required">
+      <span ng-show="myForm.pwd.$error.required"> This is a required field</span>
+      <input type="submit" value="Submit" ng-disabled="myForm.$invalid">
+
+    </form>
+
+    <script src="../angular.js" charset="utf-8"></script>
+    <script type="text/javascript">
+      angular.module('notesApp', [])
+        .controller('MainCtrl', [function() {
+          var self = this;
+          self.submit = function () {
+            console.log('user clicked submit with', self.user);
+          }
+        }]);
+    </script>
+  </body>
+</html>
+```
+
+> 对于任何含有name属性的输入框，AngularJS都会在表单对应的模型对象中创建相应的error属性。
+
+### 根据状态修改表单样式
+
+AngularJS会根据表单状态或者输入控件的状态在表单和输入控件上添加或者删除CSS class。
+
+| 状态           | 对应的CSS class     |
+| :------------- | :-------------     |
+| $invalid       | ng-invalid         |
+| $valid         | ng-valid           |
+| $pristine      | ng-pristine        |
+| $dirty         | ng-dirty           |
+| required       | ng-valid-required/ng-invalid-required    |
+| min            | ng-valid-min/ng-invalid-min              |
+| max            | ng-valid-maxmax/ng-invalid-max           |
+| minlength      | ng-valid-minlength/ng-invalid-minlength  |
+| maxlength      | ng-valid-maxlength/ng-invalid-maxlength  |
+| pattern        | ng-valid-pattern/ng-invalid-pattern      |
+| url            | ng-valid-url/ng-invalid-url              |
+| email          | ng-valid-email/ng-invalid-email          |
+| date           | ng-valid-date/ng-invalid-date            |
+| number         | ng-valid-number/ng-invalid-number        |
+
+
+> AngularJS根据验证器名称以及验证器是否通过来决定添加`ng-valid-验证器名称`或者`ng-invalid-验证器名称`这样的CSS class。
+
+```html
+<!DOCTYPE html>
+<html ng-app="notesApp">
+  <head>
+    <meta charset="utf-8">
+    <title>Note App</title>
+    <style media="screen">
+      .username.ng-valid {
+        background-color: green;
+      }
+      .username.ng-dirty.ng-invalid-required {
+        background-color: red;
+      }
+      .username.ng-dirty.ng-invalid-minlength {
+        background-color: lightpink;
+      }
+    </style>
+  </head>
+  <body ng-controller="MainCtrl as ctrl">
+    <form ng-submit="ctrl.submit()" name="myForm">
+      <input type="text" class="username" name="uname" ng-model="ctrl.user.username" ng-minlength="4" required>
+      <input type="submit" value="Submit" ng-disabled="myForm.$invalid">
+    </form>
+
+    <script src="../angular.js" charset="utf-8"></script>
+    <script type="text/javascript">
+      angular.module('notesApp', [])
+        .controller('MainCtrl', [function() {
+
+        }]);
+    </script>
+  </body>
+</html>
+```
+
+### ng-form与内嵌表单
+
+表单中的某些元素需要组合起来，然后再验证它的正确性，form无法做到，因为form是无法内嵌的。ng-form可以内嵌。
+
+```html
+<!DOCTYPE html>
+<html ng-app="notesApp">
+  <head>
+    <meta charset="utf-8">
+    <title>Notes App</title>
+  </head>
+  <body ng-controller="MainCtrl as ctrl">
+    <form name="myForm" novalidate>
+      <input type="text" name="uname" class="username" ng-model="ctrl.user.username" required placeholder="Username" ng-minlength="4">
+      <input type="password" name="pwd" class="password" ng-model="ctrl.user.password" required placeholder="Password">
+
+      <ng-form name="profile">
+        <input type="text" name="firstName" ng-model="ctrl.user.profile.firstName" required placeholder="FirstName">
+        <input type="text" name="middleName" ng-model="ctrl.user.profile.middleName" required placeholder="MiddleName">
+        <input type="text" name="lastName" ng-model="ctrl.user.profile.lastName" required placeholder="LastName">
+      </ng-form>
+
+      <span ng-show="myForm.profile.$invalid">Please fill out the profile information</span>
+      <input type="submit" name="submit" value="Submit" ng-disabled="myForm.$invalid">
+    </form>
+    <script src="../angular.js" charset="utf-8"></script>
+    <script type="text/javascript">
+      angular.module('notesApp', [])
+        .controller('MainCtrl', [function () {
+          var self = this
+        }]);
+    </script>
+  </body>
+</html>
+```
+
+### 多行文本输入框
+
+`<textarea ng-model="ctrl.user.address" required></textarea>`
+
+### 复选框
+
+复选框只有两个值true和false。ng-model中对于复选框的双向绑定字段通常是个布尔型。
+
+`<input type="checkbox" ng-model="ctrl.user.agree">`
+
+AngularJS为复选框提供了两个属性参数，可以指定true和false所对应的值。
+
+```html
+<input type="checkbox"
+        ng-model="ctrl.user.agree"
+        ng-true-value="YES"
+        ng-false-value="NO">
+```
+
+当复选框对应的值改变时，复选框的选中状态会相应改变，但反过来，复选框被选中或者取消时，它所对应的值是不变的。这可以通过`ng-checked` 指令实现。
+
+```html
+<!DOCTYPE html>
+<html ng-app="notesApp">
+  <head>
+    <meta charset="utf-8">
+    <title>Notes App</title>
+  </head>
+  <body ng-controller="MainCtrl as ctrl">
+    <div>
+      <h2>What are your favorite sports?</h2>
+      <div ng-repeat="sport in ctrl.sports">
+        <label ng-bind="sport.label"></label>
+        <div>
+          With Binding:
+          <input type="checkbox"
+                  ng-model="sport.selected"
+                  ng-true-value="'YES'"
+                  ng-false-value="'NO'">
+        </div>
+        <div>
+          Using ng-checked:
+          <input type="checkbox"
+                  ng-checked="sport.selected === 'YES'">
+        </div>
+        <div>
+          current state: {{sport.selected}}
+        </div>
+      </div>
+    </div>
+
+    <script src="../angular.js" charset="utf-8"></script>
+    <script type="text/javascript">
+      angular.module('notesApp', [])
+        .controller('MainCtrl', [function () {
+          var self = this
+          self.sports = [
+            {label: 'basketball',selected: 'YES'},
+            {label: 'cricket',selected: 'YES'},
+            {label: 'soccer',selected: 'YES'},
+            {label: 'swimming',selected: 'YES'},
+          ]
+        }]);
+    </script>
+  </body>
+</html>
+```
+
+### 单选框
+
+```html
+<div ng-init="user={gender: 'female'}">
+  <input type="radio" name="gender" value="male" ng-model="user.gender">
+  <input type="radio" name="gender" value="female" ng-model="user.gender">
+</div>
+```
+
+AngularJS允许用户在单选框中指定ng-value属性，它对应一个AngularJS表达式，并将它的值赋予模型对象。
+
+```html
+<input type="radio"
+        name="gender"
+        ng-model="user.gender"
+        ng-value="otherGender">{{otherGender}}
+```
+
+### 下拉框
+
+```html
+<div ng-init="location = 'India'">
+  <select ng-model="location">
+    <option value="USA">USA</option>
+    <option value="India">India</option>
+    <option value="Other">other</option>
+  </select>
+</div>
+```
+
+`ng-options`的使用
+
+```html
+<!DOCTYPE html>
+<html ng-app="notesApp">
+  <head>
+    <meta charset="utf-8">
+    <title>Notes App</title>
+  </head>
+  <body ng-controller="MainCtrl as ctrl">
+    <div>
+      <select ng-model="ctrl.selectedCountryId"
+              ng-options="c.id as c.label for c in ctrl.countries">
+      </select>
+      Selected CountryID: {{ctrl.selectedCountryId}}
+    </div>
+    <div>
+      <select ng-model="ctrl.selectedCountry"
+              ng-options="c.label for c in ctrl.countries">
+      </select>
+      Selected Country: {{ctrl.selectedCountry}}
+    </div>
+
+    <script src="../angular.js" charset="utf-8"></script>
+    <script type="text/javascript">
+      angular.module('notesApp', [])
+        .controller('MainCtrl', [function () {
+          var self = this;
+          self.countries = [
+            {label: 'USA', id: 1},
+            {label: 'India', id: 2},
+            {label: 'Other', id: 3},
+          ];
+          self.selectedCountryId = 2;
+          self.selectedCountry = self.countries[0]
+        }]);
+    </script>
+  </body>
+</html>
+```
+
+第一个下拉框绑定的是ctrl.selectedCountryId，第二个下拉框绑定的是ctrl.selectedCountry。一个是数字类型，一个是对象类型。
+
+- select标签加入ng-options属性，将数组的元素循环加入，动态生成列表
+- 语法和ng-repeat相似，但它能额外指定显示哪个属性作为选项内容，那个属性绑定到模型对象中。
+- `c.id as c.label for c in ctrl.countries`，AngularJS通过该指令为数组中的每一个元素创建出对应的选项。还会将数组中每一个元素的id属性作为选项主键，而label则作为主键内容
+- `c.label for c in ctrl.countries`，没有指定哪个字段作为主键，AngularJS会将ng-repeat中的每个元素作为值。
+- 用户也能加上一个分组语句，`ng-options="modelValue as labelValue group by groupValue for item in array"`
+- 如果使用的是对象，分组从句的格式略有不同，`modelValue as labelValue group by groupValue for (key, value) in object`

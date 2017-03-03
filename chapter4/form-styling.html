@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html ng-app="notesApp">
+  <head>
+    <meta charset="utf-8">
+    <title>Note App</title>
+    <style media="screen">
+      .username.ng-valid {
+        background-color: green;
+      }
+      .username.ng-dirty.ng-invalid-required {
+        background-color: red;
+      }
+      .username.ng-dirty.ng-invalid-minlength {
+        background-color: lightpink;
+      }
+    </style>
+  </head>
+  <body ng-controller="MainCtrl as ctrl">
+    <form ng-submit="ctrl.submit()" name="myForm">
+      <input type="text" class="username" name="uname" ng-model="ctrl.user.username" ng-minlength="4" required>
+      <input type="submit" value="Submit" ng-disabled="myForm.$invalid">
+    </form>
+
+    <script src="../angular.js" charset="utf-8"></script>
+    <script type="text/javascript">
+      angular.module('notesApp', [])
+        .controller('MainCtrl', [function() {
+
+        }]);
+    </script>
+  </body>
+</html>
