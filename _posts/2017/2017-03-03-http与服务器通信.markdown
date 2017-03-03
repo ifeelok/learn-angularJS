@@ -1,0 +1,19 @@
+---
+layout: "post"
+title: "$http与服务器通信"
+date: "2017-03-03 16:20"
+---
+
+通过$http服务保存和更新信息。
+
+<!-- more -->
+
+### 在$http中使用GET方式获取数据
+
+在Ajax中向服务器发送和请求最常见的做法是操作和分析XMLHttpRequest对象并创建请求，然后获取服务响应，检查错误代码，最后处理服务器的响应数据。
+
+$http是一个AgularJS的核心服务，它让用户可以通过XHR与服务器终端进行通信。
+AngularJs XHR API完全符合Promise接口规范。由于XHR是一步的，从服务器的响应时间是不确定的。Promise接口保证了这些从服务器的响应可以得到妥善处理，
+通过对Promise接口的调用，他们的处理顺序必定合乎规范。
+
+> 通过`ngResource`精简代码
