@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html ng-app="NotesApp">
+	<head>
+		<meta charset="utf-8">
+		<title>$http example</title>
+	</head>
+	<body ng-controller="MainCtrl as mainCtrl">
+		<h1>Hello servers!</h1>
+		<div class="item" ng-repeat="todo in mainCtrl.items">
+			<div><span ng-bind="todo.label"></span></div>
+			<div>-by <span ng-bind="todo.author"></span></div>
+		</div>
+
+		<script src="../../angular.js" charset="utf-8"></script>
+		<script type="text/javascript">
+			angular.module('NotesApp', [])
+				.controller('MainCtrl', ['$http', function($http){
+					var self = this;
+					self.items = [];
+					$http.get('/api/note').then(function(response){
+						self.items = response.data;
+					}, function(errResponse){
+						console.log('Error while fetching notes');
+					});
+				}]);
+		</script>
+	</body>
+</html>

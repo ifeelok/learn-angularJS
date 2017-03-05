@@ -17,3 +17,259 @@ AngularJs XHR API完全符合Promise接口规范。由于XHR是一步的，从�
 通过对Promise接口的调用，他们的处理顺序必定合乎规范。
 
 > 通过`ngResource`精简代码
+
+从服务器获取数据并显示：
+
+```html
+<!DOCTYPE html>
+<html ng-app="NotesApp">
+	<head>
+		<meta charset="utf-8">
+		<title>$http example</title>
+	</head>
+	<body ng-controller="MainCtrl as mainCtrl">
+		<h1>Hello servers!</h1>
+		<div class="item" ng-repeat="todo in mainCtrl.items">
+			<div><span ng-bind="todo.label"></span></div>
+			<div>-by <span ng-bind="todo.author"></span></div>
+		</div>
+
+		<script src="../../angular.js" charset="utf-8"></script>
+		<script type="text/javascript">
+			angular.module('NotesApp', [])
+				.controller('MainCtrl', ['$http', function($http){
+					var self = this;
+					self.items = [];
+					$http.get('/api/note').then(function(response){
+						self.items = response.data;
+					}, function(errResponse){
+						console.log('Error while fetching notes');
+					});
+				}]);
+		</script>
+	</body>
+</html>
+```
+
+`$http.get()`会返回一个Promise对线，它允许我们进行函数的链式调用。有了Promise对象之后，我们就能断言，
+在服务器返回相应后，都能执行后续的函数。
+
+`then`接收两个参数，一个是成功时的处理函数，一个是错误处理函数。如果服务器返回的是200以外的响应值，那么就会进行错误处理，
+否则触发的是成功事件。这两个处理函数都会被传入响应对象，对该对象都包含以下键值：
+- header:请求的头信息
+- status:响应的状态信息
+- config:请求的配置信息
+- data:从服务器响应的内容
+
+### Promise深入理解
+
+promise基于Kris Kowal的[Q proposal](https://github.com/kriskowal/q)，它是标准化的，为javascript的异步调用提供了非常大的便捷。
+
+```javascript
+//获取配置信息
+xhrGET('/api/server-config', function (config) {
+	//如果用户已登陆系统，获取其个人信息
+	xhrGET('/api/'+config.USER_END_POINT, function(user) {
+		//获取用户的items属性
+		xhrGET('/api/'+user.id+'/items', function(items) {
+			//真正显示items的地方
+		});
+	});
+});
+```
+
+javascript传统的异步调用方式是使用回调函数。promise的初衷就是解决嵌套和错误处理的，promise API可以解决以下功能：
+- 每一个异步任务都会返回一个promise对象
+- 每一个promise对象都含有一个then函数，它接收两个参数，成功处理和错误处理函数。
+- 当异步任务结束时，then函数中的成功处理或者错误处理函数只会被调用一次。
+- then函数同样会返回一个promise对象，这样就能进行多次链式调用。
+- 每一个处理函数，无论是成功的还是错误的，都可以有返回值并传入下一个promise函数链中
+- 如果处理函数返回promise对象(触发另一个异步请求)，那么下一个处理函数(成功或者错误)在请求结束后会立即被调用。
+
+用promise和$http写成如下格式:
+
+```javascript
+$http.get('/api/server-config').then(function(configResponse) {
+	return $http.get('/api/'+configResponse.data.USER_END_POINT);
+}).then(function(userResponse) {
+	return $http.get('/api/'+userResponse.data.id+'/items');
+}).then(function(itemResponse) {
+	//显示items数组
+}, function(error) {
+	//常见错误处理
+})
+```
+
+设置错误处理函数并将它作为第二个参数传入promise链上的最后一个函数。这样，一旦promise链
+上的任何函数出错，AngularJs都能找到下一个最接近的错误处理函数并触发它。
+
+### 成功和错误处理函数的链式传递
+
+如果想触发promise链上的下一个成功处理函数，只需要再当前的成功或者错误处理函数中给出返回
+值，AngularJs就会认为我们成功解决了所有的问题和错误。
+
+如果想触发的是错误处理函数，就是用AngularJs的`$q`服务。需要做的是控制器和服务中依赖`$q`
+并在处理函数中返回`$.reject(data)`。这样可以保证promise链下一步进入错误处理分支，data
+会作为参数传入。
+
+### $q服务
+
+$q有以下API供我们调用。
+
+**$q.defer()**
+
+**deferredObject.resolve()**
+
+**deferredObject.reject()**
+
+**$q.reject()**
+
+### 通过$http发送post请求
+
+```html
+<!DOCTYPE html>
+<html ng-app="NotesApp">
+	<head>
+		<meta charset="utf-8">
+		<title>HTTP Post Example</title>
+	</head>
+	<body ng-controller="MainCtrl as mainCtrl">
+		<h1>Hello servers</h1>
+
+		<div ng-repeat="todo in mainCtrl.items" class="item">
+			<div><span ng-bind="todo.label"></span></div>
+			<div>by <span ng-bind="todo.author"></span></div>
+		</div>
+
+		<div>
+			<form name="addForm" ng-submit="mainCtrl.add()">
+				<input type="text" ng-model="mainCtrl.newTodo.label" required="required">
+				<input type="text" ng-model="mainCtrl.newTodo.author" required="required">
+				<input type="button" name="name" value="add" ng-disabled="addForm.$invalid">
+			</form>
+		</div>
+
+		<script src="../../angular.js" charset="utf-8"></script>
+		<script type="text/javascript">
+			angular.module('NotesApp', [])
+				.controller('MainCtrl', ['$http', function($http) {
+					var self = this;
+					self.items = [];
+					self.newTodo = {};
+					var fetchTodos = function(){
+						return $http.get('/api/note').then(
+							function(response) {
+								self.items = response.data;
+							},
+							function(errResponse) {
+								console.error('Error while fetching note');
+							}
+						);
+					};
+					fetchTodos();
+					self.add = function() {
+						$http.post('/api/note', self.newTodo)
+							.then(fetchTodos)
+							.then(function(response) {
+								self.newTodo = {};
+							});
+					};
+				}]);
+		</script>
+	</body>
+</html>
+```
+
+### $http API
+
+函数：
+
+- GET
+- HEAD
+- POST
+- DELETE
+- PUT
+- JSONP
+
+对于不提交任何数据的请求，函数接收两个参数：URL和配置对象
+
+对于那些需要提交数据的请求，函数的参数为三个：URL、数据和配置对象
+
+### 配置
+
+配置对象的伪代码模板
+
+```html
+{
+	method: string,
+	url: string,
+	params: object,
+	data: string or object,
+	headers: object,
+	xsrfHeaderName: string,
+	xsrfCookieName: string,
+	transformRequest: function transform(data, headersGetter) or an array of functions,
+	transformResponse: function transform(data, headersGetter) or an array of functions,
+	cache: boolean or Cache object,
+	timeout: number,
+	withCredentials: boolean
+};
+```
+
+### 进行$http默认配置
+
+下面的例子说明如何使用`$httpProvider`配置默认的头信息和`transformRequest`。
+
+```html
+angular.module('NotesApp', [])
+	.controller('LoginCtrl', ['$http', function($http){
+		var self = this;
+		self.user = {};
+		self.message = 'Please login';
+		self.login = function(){
+			$http.post('/api/login', self.user).then(
+			function(resp){
+				self.message = resp.data.msg;
+			});
+		};
+	}])
+	.config(['$httpProvider', function($httpProvider){
+		$httpProvider.defaults.transformRequest.push(
+			function(data){
+				var requestStr;
+				if(data){
+					data = JSON.parse(data);
+					for(var key in data){
+						if(requestStr){
+							requestStr += '&' + key + '=' + data[key];
+						} else {
+							requestStr = key + '=' + data[key];
+						}
+					}
+				}
+				return requestStr
+			}
+		);
+
+		$httpProvider.defaults.headers.post['Content-Type'] =
+			'application/x-www-form-urlencoded';
+	}])
+```
+
+$httpProvider中可以设置默认值(通过$httpProvider.defaults设置)的对象：
+
+- headers.common
+- headers.get
+- headers.post
+- headers.put
+- transformRequest
+- transformResponse
+- xsrfHeaderName
+- xsrfCookieName
+
+
+### 拦截器
+
+AngularJs通过$httpProvider极大地简化了构建拦截器的过程。
+
+当我们创建单个拦截器时，AngularJs保证它将在任何请求被提交到服务器之前调用。
