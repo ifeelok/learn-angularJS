@@ -220,7 +220,7 @@ $q有以下API供我们调用。
 
 下面的例子说明如何使用`$httpProvider`配置默认的头信息和`transformRequest`。
 
-```html
+```javascript
 angular.module('NotesApp', [])
 	.controller('LoginCtrl', ['$http', function($http){
 		var self = this;
@@ -270,6 +270,11 @@ $httpProvider中可以设置默认值(通过$httpProvider.defaults设置)的对�
 
 ### 拦截器
 
-AngularJs通过$httpProvider极大地简化了构建拦截器的过程。
+AngularJs通过$httpProvider极大地简化了构建拦截器的过程。拦截器可以让我们能够检查每一个
+请求和响应并用共享的方法处理特定的事件。
 
 当我们创建单个拦截器时，AngularJs保证它将在任何请求被提交到服务器之前调用。
+
+```javascript
+angular.module('notesApp')
+```
