@@ -276,5 +276,125 @@ AngularJs通过$httpProvider极大地简化了构建拦截器的过程。拦截�
 当我们创建单个拦截器时，AngularJs保证它将在任何请求被提交到服务器之前调用。
 
 ```javascript
-angular.module('notesApp')
+angular.module('notesApp', [])
+  .controller('MainCtrl', ['$http', function ($http) {
+    var self = this;
+    self.items = [];
+
+    self.newTodo = {};
+    var fetchTodos = function () {
+      return $http.get('/api/note').then(function (resposne) {
+        self.items = resposne.data;
+      }, function (errResponse) {
+        console.log('Error while fetching notes');
+      });
+    };
+
+    fetchTodos();
+
+    self.add = function(){
+      $http.post('/api/note', self.newTodo)
+        .then(fetchTodos)
+        .then(function (resposne) {
+          self.newTodo = {}
+        });
+    };
+  }])
+    .factory('MyLoggingInterceptor', ['$q', function ($q) {
+      return {
+        request: function (config) {
+          console.log('Reques made with ', config);
+          return config;
+          //如果发生错误或者未满足要求，可以直接调用
+          //$q.reject('Not allowed')
+        },
+        requestError: function (rejection) {
+          console.log('Request error due to ', rejection);
+          //继续执行以确保promise链上下一环能够接收到错误信息
+          return $q.reject(rejection);
+        },
+        response: function(response) {
+          console.log('Response from server ', response);
+          //返回promise对象
+          return response || $q.when(response);
+        },
+        responseError: function(rejection) {
+          console.log('Error in response', rejection);
+          //继续执行以确保promise链上下一环能够接收到错误信息
+          //如果有必要，可以检查错误状态吗
+          //if(rejection.status == 403){
+          //显示登陆对话框
+          // 返回某个值告诉控制器错误情况已经被处理
+          //}
+          // 也可以调用reject函数进入promise错误处理链上的下一环
+          return $q.reject(rejection);
+        }
+      };
+    }])
+    .config('$httpProvider', function($httpProvider) {
+      $httpProvider.interceptors.push('MyLoggingInterceptor');
+    })
 ```
+
+以上实现了一个简单的拦截器，它所做的是记录所有发送出去的请求以及从服务器返回的响应并打印
+到日志中。
+
+最后使用`$httpProvider`将这些`$http`服务整合起来。`$httpProvider`中的`interceptors`
+数组可以根据名称添加拦截器。
+
+### 推荐做法
+
+*封装$http服务*
+
+```javascript
+angular.module('notesApp', [])
+  .factory('NoteService', ['$http', function($http) {
+    return {
+      query: function() {
+        return $http.get('/api/notes');
+      }
+    }
+  }])
+```
+
+可以通过`NoteService.query()`调用。
+
+*使用拦截器*
+
+如果需要在每次请求之后都执行某些相同的任务，比如记录这些请求或者在头信息中添加某些认证。
+这些任务也可能是在响应数据满足某些特定条件时才触发。这个时候应该使用拦截器。
+
+一个处理403错误或者在每个请求的头信息中添加验证内容的拦截器看上去是这样的：
+
+```javascript
+angular.module('notesApp', [])
+  .factory('AuthIntercepter', ['AuthInfoService', '$q', function(AuthInfoService, $q) {
+    return {
+      request: function(config) {
+        if (AuthInfoService.hasAuthHeader()){
+          config.headers['Authorization'] = AuthInfoService.getAuthHeader();
+        }
+        return config
+      },
+      responseError: function(responseRejection) {
+        if(responseError.status === 403){
+          AuthInfoService.redirectToLogin();
+        }
+        return $q.reject(responseRejection);
+      }
+    };
+  }])
+  .config(['$httpProvider'], function($httpProvider) {
+    $httpProvider.interceptors.push('AuthIntercepter');
+  })
+```
+
+*拦截链*
+
+可以创建多个小型拦截器，每个拦截器都有专注于某些功能。可以分别为验证、日志以及其他功能单
+独创建拦截器。这些拦截器会根据加入`provider`的顺序依次被调用，我们可以控制他们的执行顺序。
+
+*利用默认值*
+
+如果我们的终端返回的是XML而不是json，我们应该修改默认的`$httpProvider`的`transformResponse`
+函数，让它能够将XML转换为json格式。我们也能只为`GET`和`POST`请求设置默认值。
