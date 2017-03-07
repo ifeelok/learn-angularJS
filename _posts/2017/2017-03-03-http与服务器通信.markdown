@@ -398,3 +398,107 @@ angular.module('notesApp', [])
 
 如果我们的终端返回的是XML而不是json，我们应该修改默认的`$httpProvider`的`transformResponse`
 函数，让它能够将XML转换为json格式。我们也能只为`GET`和`POST`请求设置默认值。
+
+### 在控制器和服务中使用过滤器
+
+任何过滤器，都可以通过在名称中添加`Filter`这个后缀注入到服务和控制器中。
+
+```javascript
+angular.module('myModule', [])
+  .controller('MyCtrl', ['currencyFilter', function(currencyFilter) {
+
+  }])
+```
+
+在HTML中使用过滤器是用管道的形式。
+在控制器和服务中使用过滤器是用函数的形式，第一个参数是过滤器需要过滤的值，可选参数紧随其后。
+
+```javascript
+self.filteredArray = filterFilter(self.notes , 'ch')
+```
+
+### 创建angularjs自定义过滤器
+
+写一个过滤器，类似于[MomentJS](http://momentjs.com)，接收一个时间戳，在UI上显示出数秒之前、
+数分钟之前、数天之前、数月之前的信息。
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Custom Filters in Action</title>
+  </head>
+  <body ng-app="filtersApp">
+    <div ng-controller="FilterCtrl as ctrl">
+      <div>
+        Start Time (Timestamp): {{ctrl.startTime}}
+      </div>
+      <div>
+        Start Time (DateTime): {{ctrl.startTime | date:'medium'}}
+      </div>
+      <div>
+        Start Time (OurFilter): {{ctrl.startTime | timeAgo}}
+      </div>
+
+      <div>
+        someTimeAgo: {{ctrl.someTimeAgo | date:'yyyy-mm-dd'}}
+      </div>
+      <div>
+        someTimeAgo(OurFilter): {{ctrl.someTimeAgo | timeAgo}}
+      </div>
+    </div>
+
+    <script src="../angular.js" charset="utf-8"></script>
+    <script type="text/javascript">
+      angular.module('filtersApp', [])
+        .controller('FilterCtrl', [function() {
+          this.startTime = new Date().getTime();
+          this.someTimeAgo = new Date().getTime() - (1000*60*60*4)
+        }])
+        .filter('timeAgo', [function() {
+          var ONE_MINUTE = 1000 * 60;
+          var ONE_HOUR = ONE_MINUTE * 60;
+          var ONE_DAY = ONE_HOUR * 24;
+          var ONE_MONTH = ONE_DAY * 30;
+
+          return function(ts) {
+            var currentTime = new Date().getTime();
+            var diff = currentTime - ts;
+
+            if (diff < ONE_MINUTE){
+              return 'seconds ago';
+            } else if (diff < ONE_HOUR) {
+              return 'minutes ago';
+            } else if (diff < ONE_DAY) {
+              return 'hours ago';
+            } else if (diff < ONE_MONTH) {
+              return 'days ago';
+            } else {
+              return 'months ago'
+            }
+          }
+        }])
+    </script>
+  </body>
+</html>
+```
+
+如果需要传递多个参数，则：
+
+```javascript
+return function(ts, arg1, arg2, arg3) {
+
+}
+
+{{ctrl.startTime | timeAgo:arg1:arg2:arg3}}
+```
+
+### 过滤器中的要点
+
+*视图中的过滤器在每个digest周期都会被执行*
+
+`digest`将在以后的章节中提到。
+
+*过滤器必须快如闪电*
+
+*将过滤器置入服务和控制器中以获得最佳性能*

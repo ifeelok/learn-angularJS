@@ -1,0 +1,136 @@
+---
+layout: "post"
+title: "与过滤器共舞"
+date: "2017-03-07 10:03"
+---
+
+学习如何使用过滤器和创建简单的自定义过滤器。
+
+<!-- more -->
+
+### 介绍
+
+过滤器用于处理数据以及将数据格式化后呈现给用户。可以通过HTML中的表达式使用，也可以直接作
+用于控制器或者服务中的数据。通常，过滤器处于数据传递链的最后一环，将数据转换为一般格式。
+
+### 过滤器语法
+
+基本的过滤器语法和Unix非常类似，将一个表达式的结果传给下一个:`{{expression | filter}}`，
+过滤器会接收表达式的值(字符串、数组或者数组)，然后将它们转换成其他格式。
+
+还能链式使用多个过滤器，将过滤结果输出给下一个过滤器。语法为:`{{expression | filter | filter}}`。
+
+### 常见的过滤器
+
+*currency*
+
+货币过滤器将指定的数字格式化成包含分隔符、数字以及货币符号的货币格式。第二个参数是可选的，
+用于指定货币符号，没有指定则用当前浏览器的默认符号。
+
+*number*
+
+数字过滤器可以通过添加分隔符来将数字转换成易读的格式。该过滤器可以接收一个可选参数来决定
+保留小数点之后的几位。
+
+*lowercase*
+
+小写格式过滤器。
+
+*uppercase*
+
+大写格式过滤器
+
+*json*
+
+它能将json对象或者数组(包括基本类型)转换成字符串后显示在UI中。
+
+*date*
+
+日期过滤器可以高度自定义。可以接收一个日期对象或者代表日期的长整型，然后将数据转换为可读
+的字符串显示在UI中。用户可以自行制定格式或者选择内置的三种格式(short, medium等)。
+[日期过滤器](https://docs.angularjs.org/api/ng/filter/date)
+
+### 对数组数据根据需求切割和排序、显示
+
+*limitTo*
+
+接收字符串或者数组，然后根据开始索引或者结束索引返回输入值的子集。如果参数是某个数字，当
+输入是数组时，它返回相应个数元素，当输入是字符串，它返回相应个数的字符。如果参数是负数，
+它会从后往前数。
+
+*orderBy*
+
+两个较为复杂的过滤器之一(另一个是filter)，可以根据事先定义的比较大小的表达式(也可以是一
+组表达式)将数组进行排序。他的第二个参数是可选的布尔型，代表数组是否需要反序排列。最简单的
+表达式是一个字符串，它表示根据哪个字段进行排序，也可以在字段前加上`+`或者`-`表示升序或者
+降序。比较大小的表达式也可以是函数，根据返回值判定比较结果来决定顺序。表达式也可以是一个
+数组，其中每个元素都是字符串或者数组。
+
+
+*filter*
+
+通过断言或者函数决定数组中的哪些元素符合要求，通常和ng-repeat配置使用来动态过滤数组。过
+滤表达式有以下几种：
+1. string
+> 如果表达式是一个字符串，AngularJs会扫描数组中的每个对象的键集，如果包含了指定字符串则保留。可以在字符串前加`!`表示相反。
+
+2. object
+> 比如`{size: 'M'}`，它会检查每个对象是否有`size`键，该键的值中是否包含了`M`这个字符。
+
+3. function
+> 数组中的每个元素都会调用这个函数，如果返回值为`false`则被过滤掉。
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Filter in Action</title>
+  </head>
+  <body ng-app="filtersApp">
+    <div ng-controller="FilterCtrl as ctrl">
+      <button ng-click="ctrl.currentFilter='string'">Filter with String</button>
+      <button ng-click="ctrl.currentFilter='object'">Filter with object</button>
+      <button ng-click="ctrl.currentFilter='function'">Filter with function</button>
+      Filter Text
+      <input type="text" ng-model="ctrl.filterOptions['string']">
+      Show Done Only
+      <input type="checkbox" ng-model="ctrl.filterOptions['object'].done">
+      <ul>
+        <li ng-repeat="note in ctrl.notes |
+                      filter:ctrl.filterOptions[ctrl.currentFilter] |
+                      orderBy:ctrl.sortOrder ">
+          {{note.label}} - {{note.type}} - {{note.done}}
+        </li>
+      </ul>
+    </div>
+
+    <script src="../angular.js" charset="utf-8"></script>
+    <script type="text/javascript">
+      angular.module('filtersApp', [])
+        .controller('FilterCtrl', [function() {
+          this.notes = [
+            {label: 'FC Todo', type: 'chore', done: false},
+            {label: 'FT Todo', type: 'task', done: false},
+            {label: 'FF Todo', type: 'fun', done: true},
+            {label: 'SC Todo', type: 'chore', done: false},
+            {label: 'ST Todo', type: 'task', done: true},
+            {label: 'SF Todo', type: 'fun', done: true},
+            {label: 'TC Todo', type: 'chore', done: false},
+            {label: 'TT Todo', type: 'task', done: false},
+            {label: 'TF Todo', type: 'fun', done: false}
+          ];
+          this.sortOrder = ['+type', '-label'];
+          this.filterOptions = {
+            string: '',
+            object: {done: true, label: 'F'},
+            function: function(note) {
+              return note.type === 'task' && note.done === false;
+            }
+          };
+          this.currentFilter = 'string';
+        }])
+    </script>
+  </body>
+</html>
+```

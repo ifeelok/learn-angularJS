@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Filter in Action</title>
+  </head>
+  <body ng-app="filtersApp">
+    <div ng-controller="FilterCtrl as ctrl">
+      <button ng-click="ctrl.currentFilter='string'">Filter with String</button>
+      <button ng-click="ctrl.currentFilter='object'">Filter with object</button>
+      <button ng-click="ctrl.currentFilter='function'">Filter with function</button>
+      Filter Text
+      <input type="text" ng-model="ctrl.filterOptions['string']">
+      Show Done Only
+      <input type="checkbox" ng-model="ctrl.filterOptions['object'].done">
+      <ul>
+        <li ng-repeat="note in ctrl.notes |
+                      filter:ctrl.filterOptions[ctrl.currentFilter] |
+                      orderBy:ctrl.sortOrder ">
+          {{note.label}} - {{note.type}} - {{note.done}}
+        </li>
+      </ul>
+    </div>
+
+    <script src="../angular.js" charset="utf-8"></script>
+    <script type="text/javascript">
+      angular.module('filtersApp', [])
+        .controller('FilterCtrl', [function() {
+          this.notes = [
+            {label: 'FC Todo', type: 'chore', done: false},
+            {label: 'FT Todo', type: 'task', done: false},
+            {label: 'FF Todo', type: 'fun', done: true},
+            {label: 'SC Todo', type: 'chore', done: false},
+            {label: 'ST Todo', type: 'task', done: true},
+            {label: 'SF Todo', type: 'fun', done: true},
+            {label: 'TC Todo', type: 'chore', done: false},
+            {label: 'TT Todo', type: 'task', done: false},
+            {label: 'TF Todo', type: 'fun', done: false}
+          ];
+          this.sortOrder = ['+type', '-label'];
+          this.filterOptions = {
+            string: '',
+            object: {done: true, label: 'F'},
+            function: function(note) {
+              return note.type === 'task' && note.done === false;
+            }
+          };
+          this.currentFilter = 'string';
+        }])
+    </script>
+  </body>
+</html>
