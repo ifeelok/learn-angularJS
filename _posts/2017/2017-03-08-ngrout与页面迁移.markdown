@@ -126,3 +126,43 @@ $routeProvider.when('/', {
 *resolve*
 
 > 从概念层次看，`resolve`是一种在迁移之前执行和完成一些列异步任务的方式。
+
+### Resolve与迁移检验
+
+resolve由一组键和函数组成，每个函数都会返回某个值或者promise对象。
+
+```javascript
+angular.module('resolveApp', ['ngRoute'])
+  .value('Constant', {MAGIC_NUMBER: 42})
+  .config(['$routeProvider', function($routeProvider) {
+    $routeProvider.when('/', {
+      template: '<h1>Main Page, no resolves</h1>'
+    })
+    .when('/protected', {
+      template: '<h2>Protected Page</h2>',
+      resolve: {
+        immediate : ['Constant', function (constant) {
+          return constant.MAGIC_NUMBER*4;
+        }],
+        async: ['$http', function($http){
+          return $http.get('/api/hasAccess');
+        }]
+      },
+      controller: ['$log', 'immediate', 'async', function($log, immediate, async) {
+        $log.log('immediate is', immediate),
+        $log.log('Server returned for async', async)
+      }]
+    })
+  }])
+```
+
+resolve的键的名称可以随意指定。
+
+- 如果resolve函数返回某个值，AngularJs立即完成操作并认为该resolve成果执行
+- 返回promise对象，则会等待该promise返回，根据结果判断成功与否
+- resolve函数的存在可以确保指定resolve函数完成执行之前，迁移不会发生
+- 只要任何一个resolve发生错误或者某个promise对象执行失败，AngularJs不会执行迁移
+
+> 如果需要获取resolve的数据，可以将resolve键值注入控制器中。
+
+#### 使用$routeParams服务
