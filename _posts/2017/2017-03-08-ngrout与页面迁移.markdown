@@ -166,3 +166,5 @@ resolve的键的名称可以随意指定。
 > 如果需要获取resolve的数据，可以将resolve键值注入控制器中。
 
 #### 使用$routeParams服务
+
+测试一下
